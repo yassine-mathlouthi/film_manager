@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "759904501110",
+    "project_id": "film-edc60",
+    "storage_bucket": "film-edc60.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:759904501110:android:dc1928ea0788cbd6028e57",
+        "android_client_info": {
+          "package_name": "com.example.film_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqgYtfYKUmXS1LbkpKuZvSowNojfrjzYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
