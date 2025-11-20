@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/storage_service.dart';
-import '../data/demo_data.dart';
+import '../services/firebase_auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
+  final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
   User? _currentUser;
   bool _isLoading = false;
   String? _error;
@@ -37,22 +38,18 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
-      // Check static demo users
-      final user = DemoData.findUserByCredentials(email, password);
+      // Sign in with Firebase
+      final userData = await _firebaseAuthService.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      if (user != null) {
-        // Create user model without password
-        final userData = Map<String, dynamic>.from(user);
-        userData.remove('password');
-
+      if (userData != null) {
         _currentUser = User.fromJson(userData);
 
         // Save to local storage
-        await StorageService.saveToken('demo_token_${user['id']}');
+        await StorageService.saveToken(userData['id']);
         await StorageService.saveLoginStatus(true);
         await StorageService.saveUser(_currentUser!);
 
@@ -62,7 +59,7 @@ class AuthProvider extends ChangeNotifier {
         _setError('Invalid credentials. Please try again.');
       }
     } catch (e) {
-      _setError('Login failed. Please check your connection.');
+      _setError(e.toString());
     }
 
     _setLoading(false);
@@ -80,42 +77,31 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
-      // Check if email already exists
-      if (DemoData.isEmailTaken(email)) {
-        _setError('Email already exists. Please use a different email.');
+      // Register with Firebase
+      final userData = await _firebaseAuthService.registerWithEmailAndPassword(
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+        role: role,
+      );
+
+      if (userData != null) {
+        _currentUser = User.fromJson(userData);
+
+        // Save to local storage
+        await StorageService.saveToken(userData['id']);
+        await StorageService.saveLoginStatus(true);
+        await StorageService.saveUser(_currentUser!);
+
         _setLoading(false);
-        return false;
+        return true;
+      } else {
+        _setError('Registration failed. Please try again.');
       }
-
-      // Create new user
-      final newUser = {
-        'id': (DemoData.users.length + 1).toString(),
-        'email': email,
-        'firstName': firstName,
-        'lastName': lastName,
-        'role': role,
-        'createdAt': DateTime.now().toIso8601String(),
-        'lastLoginAt': DateTime.now().toIso8601String(),
-      };
-
-      // Add to demo users (in real app, this would be API call)
-      DemoData.users.add({...newUser, 'password': password});
-
-      _currentUser = User.fromJson(newUser);
-
-      // Save to local storage
-      await StorageService.saveToken('demo_token_${newUser['id']}');
-      await StorageService.saveLoginStatus(true);
-      await StorageService.saveUser(_currentUser!);
-
-      _setLoading(false);
-      return true;
     } catch (e) {
-      _setError('Registration failed. Please try again.');
+      _setError(e.toString());
     }
 
     _setLoading(false);
@@ -127,11 +113,12 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      await _firebaseAuthService.signOut();
       await StorageService.clearUserData();
       _currentUser = null;
       _clearError();
     } catch (e) {
-      _setError('Logout failed');
+      _setError(e.toString());
     }
 
     _setLoading(false);
@@ -144,11 +131,14 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
-      // Update current user data
+      // Update in Firebase
+      await _firebaseAuthService.updateUserProfile(
+        uid: _currentUser!.id,
+        updates: updates,
+      );
+
+      // Update current user data locally
       final updatedUserData = {
         'id': _currentUser!.id,
         'email': _currentUser!.email,
@@ -167,11 +157,27 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _setError('Update failed. Please try again.');
+      _setError(e.toString());
     }
 
     _setLoading(false);
     return false;
+  }
+
+  // Send password reset email
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _firebaseAuthService.sendPasswordResetEmail(email);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
   }
 
   void _setLoading(bool loading) {

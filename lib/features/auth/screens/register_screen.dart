@@ -38,24 +38,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      final success = await authProvider.register(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-      );
-
-      if (success && mounted) {
-        // Navigate to home (regular users only)
-        context.go('/home');
-      } else if (mounted) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'Registration failed'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+      try {
+        print("RegisterScreen: Starting registration...");
+        
+        final success = await authProvider.register(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
         );
+
+        print("RegisterScreen: Registration result: $success");
+
+        if (success && mounted) {
+          // Navigate to home (regular users only)
+          print("RegisterScreen: Navigating to home...");
+          context.go('/home');
+        } else if (mounted) {
+          // Show error message
+          final errorMessage = authProvider.error ?? 'Registration failed';
+          print("RegisterScreen: Registration failed - $errorMessage");
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: AppTheme.errorColor,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } catch (e) {
+        print("RegisterScreen: Caught exception - $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: AppTheme.errorColor,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       }
     }
   }
