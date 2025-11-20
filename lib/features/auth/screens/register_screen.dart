@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -23,6 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _ageController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
+  XFile? _selectedImage;
 
   @override
   void dispose() {
@@ -31,7 +35,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPasswordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _ageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _register() async {
@@ -46,6 +77,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           password: _passwordController.text,
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
+          age: _ageController.text.isEmpty ? null : int.tryParse(_ageController.text),
+          imagePath: _selectedImage?.path,
         );
 
         print("RegisterScreen: Registration result: $success");
@@ -189,6 +222,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Age field
+                          CustomTextField(
+                            label: 'Age (Optional)',
+                            hint: 'Enter your age',
+                            controller: _ageController,
+                            keyboardType: TextInputType.number,
+                            prefixIcon: Icon(
+                              PhosphorIcons.calendar(),
+                              color: AppTheme.textSecondary,
+                            ),
+                            validator: (value) {
+                              if (value != null && value.isNotEmpty) {
+                                final age = int.tryParse(value);
+                                if (age == null || age < 1 || age > 120) {
+                                  return 'Please enter a valid age';
+                                }
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Profile photo picker
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceColor,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppTheme.textSecondary.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    PhosphorIcons.image(),
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _selectedImage == null
+                                          ? 'Add Profile Photo (Optional)'
+                                          : 'Photo selected: ${_selectedImage!.name}',
+                                      style: AppTheme.bodyStyle.copyWith(
+                                        color: _selectedImage == null
+                                            ? AppTheme.textSecondary
+                                            : AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_selectedImage != null)
+                                    Icon(
+                                      PhosphorIcons.check(PhosphorIconsStyle.bold),
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 20),
 

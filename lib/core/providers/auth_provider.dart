@@ -72,6 +72,8 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required String firstName,
     required String lastName,
+    int? age,
+    String? imagePath,
     String role = 'user',
   }) async {
     _setLoading(true);
@@ -84,6 +86,8 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         firstName: firstName,
         lastName: lastName,
+        age: age,
+        imagePath: imagePath,
         role: role,
       );
 

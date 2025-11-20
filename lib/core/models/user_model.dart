@@ -6,6 +6,7 @@ class User {
   final String firstName;
   final String lastName;
   final String role;
+  final int? age;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
   final String? profileImageUrl;
@@ -16,6 +17,7 @@ class User {
     required this.firstName,
     required this.lastName,
     required this.role,
+    this.age,
     required this.createdAt,
     this.lastLoginAt,
     this.profileImageUrl,
@@ -29,6 +31,7 @@ class User {
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       role: json['role'] as String,
+      age: json['age'] as int?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastLoginAt: json['lastLoginAt'] != null
           ? DateTime.parse(json['lastLoginAt'] as String)
@@ -45,6 +48,7 @@ class User {
       'firstName': firstName,
       'lastName': lastName,
       'role': role,
+      'age': age,
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'profileImageUrl': profileImageUrl,
@@ -61,6 +65,7 @@ class User {
     String? firstName,
     String? lastName,
     String? role,
+    int? age,
     DateTime? createdAt,
     DateTime? lastLoginAt,
     String? profileImageUrl,
@@ -71,6 +76,7 @@ class User {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       role: role ?? this.role,
+      age: age ?? this.age,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,

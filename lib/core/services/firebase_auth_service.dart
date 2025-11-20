@@ -1,9 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class FirebaseAuthService {
   final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // Get current Firebase user
   firebase_auth.User? get currentFirebaseUser => _firebaseAuth.currentUser;
@@ -50,6 +53,8 @@ class FirebaseAuthService {
     required String password,
     required String firstName,
     required String lastName,
+    int? age,
+    String? imagePath,
     String role = 'user',
   }) async {
     try {
@@ -66,13 +71,31 @@ class FirebaseAuthService {
       print("UID: ${credential.user?.uid}");
 
       if (credential.user != null) {
+        String? profileImageUrl;
+        
+        // Upload profile image if provided
+        if (imagePath != null) {
+          try {
+            print("Uploading profile image...");
+            final ref = _storage.ref().child('profile_images/${credential.user!.uid}.jpg');
+            await ref.putFile(File(imagePath));
+            profileImageUrl = await ref.getDownloadURL();
+            print("✅ Profile image uploaded: $profileImageUrl");
+          } catch (e) {
+            print("⚠️ Failed to upload profile image: $e");
+            // Continue registration even if image upload fails
+          }
+        }
+        
         // Create user document in Firestore
         final userData = {
           'id': credential.user!.uid,
           'email': email,
           'firstName': firstName,
           'lastName': lastName,
+          'age': age,
           'role': role,
+          'profileImageUrl': profileImageUrl,
           'createdAt': DateTime.now().toIso8601String(),
           'lastLoginAt': DateTime.now().toIso8601String(),
         };

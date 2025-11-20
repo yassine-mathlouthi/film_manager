@@ -62,6 +62,8 @@ dependencies:
 
   # Network
   http: ^1.2.0
+  image_picker: ^1.2.1
+  firebase_storage: ^12.4.10
 
 dev_dependencies:
   flutter_test:
