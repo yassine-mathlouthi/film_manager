@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -11,23 +10,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Film Manager'),
-        actions: [
-          IconButton(
-            icon: Icon(PhosphorIcons.gear()),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
-          ),
-          IconButton(
-            icon: Icon(PhosphorIcons.signOut()),
-            onPressed: () => _showLogoutDialog(context),
-          ),
-        ],
-      ),
-      body: Consumer<AuthProvider>(
+    return Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           final user = authProvider.currentUser;
           if (user == null) {
@@ -136,15 +119,7 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigate to add film
-        },
-        backgroundColor: AppTheme.accentColor,
-        child: Icon(PhosphorIcons.plus()),
-      ),
-    );
+      );
   }
 
   Widget _buildStatCard({
@@ -326,30 +301,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Provider.of<AuthProvider>(context, listen: false).logout();
-              context.go('/login');
-            },
-            child: const Text('Logout'),
-          ),
-        ],
       ),
     );
   }

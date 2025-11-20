@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
-import '../../features/home/screens/home_screen.dart';
+import '../../features/home/screens/main_navigation_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/users_list_screen.dart';
 
@@ -24,7 +24,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/home',
       name: 'home',
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const MainNavigationScreen(),
       redirect: (context, state) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (!authProvider.isLoggedIn) {
