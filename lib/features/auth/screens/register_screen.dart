@@ -27,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _ageController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
   XFile? _selectedImage;
+  
+  int _currentStep = 0;
 
   @override
   void dispose() {
@@ -63,6 +65,259 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     }
+  }
+
+  void _onStepContinue() {
+    if (_currentStep < 2) {
+      // Validate current step before moving forward
+      if (_validateCurrentStep()) {
+        setState(() {
+          _currentStep++;
+        });
+      }
+    } else {
+      // Last step - register user
+      _register();
+    }
+  }
+
+  void _onStepCancel() {
+    if (_currentStep > 0) {
+      setState(() {
+        _currentStep--;
+      });
+    }
+  }
+
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Personal Info
+        if (_firstNameController.text.trim().isEmpty) {
+          _showError('Please enter your first name');
+          return false;
+        }
+        if (_lastNameController.text.trim().isEmpty) {
+          _showError('Please enter your last name');
+          return false;
+        }
+        if (_ageController.text.isNotEmpty) {
+          final age = int.tryParse(_ageController.text);
+          if (age == null || age < 1 || age > 120) {
+            _showError('Please enter a valid age');
+            return false;
+          }
+        }
+        return true;
+      case 1: // Account Details
+        if (_emailController.text.trim().isEmpty) {
+          _showError('Please enter your email');
+          return false;
+        }
+        if (!EmailValidator.validate(_emailController.text.trim())) {
+          _showError('Please enter a valid email');
+          return false;
+        }
+        if (_passwordController.text.isEmpty) {
+          _showError('Please enter your password');
+          return false;
+        }
+        if (_passwordController.text.length < 6) {
+          _showError('Password must be at least 6 characters');
+          return false;
+        }
+        if (_confirmPasswordController.text != _passwordController.text) {
+          _showError('Passwords do not match');
+          return false;
+        }
+        return true;
+      case 2: // Profile Photo (optional)
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.errorColor,
+      ),
+    );
+  }
+
+  Widget _buildPersonalInfoStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CustomTextField(
+          label: 'First Name',
+          hint: 'Enter your first name',
+          controller: _firstNameController,
+          prefixIcon: Icon(
+            PhosphorIcons.user(),
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        CustomTextField(
+          label: 'Last Name',
+          hint: 'Enter your last name',
+          controller: _lastNameController,
+          prefixIcon: Icon(
+            PhosphorIcons.user(),
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        CustomTextField(
+          label: 'Age (Optional)',
+          hint: 'Enter your age',
+          controller: _ageController,
+          keyboardType: TextInputType.number,
+          prefixIcon: Icon(
+            PhosphorIcons.calendar(),
+            color: AppTheme.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccountDetailsStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CustomTextField(
+          label: 'Email Address',
+          hint: 'Enter your email',
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          prefixIcon: Icon(
+            PhosphorIcons.envelope(),
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        CustomTextField(
+          label: 'Password',
+          hint: 'Enter your password',
+          controller: _passwordController,
+          isPassword: true,
+          prefixIcon: Icon(
+            PhosphorIcons.lock(),
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        CustomTextField(
+          label: 'Confirm Password',
+          hint: 'Confirm your password',
+          controller: _confirmPasswordController,
+          isPassword: true,
+          prefixIcon: Icon(
+            PhosphorIcons.lock(),
+            color: AppTheme.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfilePhotoStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Add a profile photo',
+          style: AppTheme.titleStyle.copyWith(fontSize: 18),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'This is optional - you can skip this step',
+          style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: _selectedImage == null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        PhosphorIcons.image(PhosphorIconsStyle.bold),
+                        size: 64,
+                        color: AppTheme.textSecondary,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Tap to select photo',
+                        style: AppTheme.bodyStyle.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        PhosphorIcons.checkCircle(PhosphorIconsStyle.fill),
+                        size: 64,
+                        color: AppTheme.primaryColor,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Photo selected',
+                        style: AppTheme.bodyStyle.copyWith(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedImage!.name,
+                        style: AppTheme.captionStyle,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Already have an account? ',
+              style: AppTheme.bodyStyle,
+            ),
+            GestureDetector(
+              onTap: () => context.go('/login'),
+              child: Text(
+                'Sign In',
+                style: AppTheme.bodyStyle.copyWith(
+                  color: AppTheme.accentColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Future<void> _register() async {
@@ -121,277 +376,137 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.accentGradient),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo and title
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        PhosphorIcons.filmStrip(),
+                        size: 48,
+                        color: Colors.white,
+                      ),
                     ),
-                    child: Icon(
-                      PhosphorIcons.filmStrip(),
-                      size: 64,
-                      color: Colors.white,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Join Film Manager',
+                      style: AppTheme.headlineStyle.copyWith(
+                        color: Colors.white,
+                        fontSize: 28,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Join Film Manager',
-                    style: AppTheme.headlineStyle.copyWith(
-                      color: Colors.white,
-                      fontSize: 32,
+                    const SizedBox(height: 8),
+                    Text(
+                      'Step ${_currentStep + 1} of 3',
+                      style: AppTheme.subtitleStyle.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create your account and start managing your film collection',
-                    style: AppTheme.subtitleStyle.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
+                  ],
+                ),
+              ),
 
-                  // Registration form
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+              // Stepper Content
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: AppTheme.primaryColor,
                         ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Create Account',
-                            style: AppTheme.titleStyle,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CustomTextField(
-                                  label: 'First Name',
-                                  hint: 'Enter your first name',
-                                  controller: _firstNameController,
-                                  prefixIcon: Icon(
-                                    PhosphorIcons.user(),
-                                    color: AppTheme.textSecondary,
+                      ),
+                      child: Stepper(
+                        currentStep: _currentStep,
+                        onStepContinue: _onStepContinue,
+                        onStepCancel: _onStepCancel,
+                        controlsBuilder: (context, details) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 24),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Consumer<AuthProvider>(
+                                    builder: (context, authProvider, child) {
+                                      return CustomButton(
+                                        text: _currentStep == 2 ? 'Create Account' : 'Continue',
+                                        onPressed: details.onStepContinue,
+                                        isLoading: authProvider.isLoading,
+                                      );
+                                    },
                                   ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter your first name';
-                                    }
-                                    return null;
-                                  },
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: CustomTextField(
-                                  label: 'Last Name',
-                                  hint: 'Enter your last name',
-                                  controller: _lastNameController,
-                                  prefixIcon: Icon(
-                                    PhosphorIcons.user(),
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter your last name';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Age field
-                          CustomTextField(
-                            label: 'Age (Optional)',
-                            hint: 'Enter your age',
-                            controller: _ageController,
-                            keyboardType: TextInputType.number,
-                            prefixIcon: Icon(
-                              PhosphorIcons.calendar(),
-                              color: AppTheme.textSecondary,
-                            ),
-                            validator: (value) {
-                              if (value != null && value.isNotEmpty) {
-                                final age = int.tryParse(value);
-                                if (age == null || age < 1 || age > 120) {
-                                  return 'Please enter a valid age';
-                                }
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Profile photo picker
-                          GestureDetector(
-                            onTap: _pickImage,
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppTheme.textSecondary.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    PhosphorIcons.image(),
-                                    color: AppTheme.textSecondary,
-                                  ),
+                                if (_currentStep > 0) ...[
                                   const SizedBox(width: 12),
                                   Expanded(
-                                    child: Text(
-                                      _selectedImage == null
-                                          ? 'Add Profile Photo (Optional)'
-                                          : 'Photo selected: ${_selectedImage!.name}',
-                                      style: AppTheme.bodyStyle.copyWith(
-                                        color: _selectedImage == null
-                                            ? AppTheme.textSecondary
-                                            : AppTheme.primaryColor,
+                                    child: OutlinedButton(
+                                      onPressed: details.onStepCancel,
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        side: BorderSide(color: AppTheme.primaryColor),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Back',
+                                        style: AppTheme.bodyStyle.copyWith(
+                                          color: AppTheme.primaryColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  if (_selectedImage != null)
-                                    Icon(
-                                      PhosphorIcons.check(PhosphorIconsStyle.bold),
-                                      color: AppTheme.primaryColor,
-                                    ),
                                 ],
-                              ),
+                              ],
                             ),
+                          );
+                        },
+                        steps: [
+                          // Step 1: Personal Information
+                          Step(
+                            title: const Text('Personal Info'),
+                            isActive: _currentStep >= 0,
+                            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                            content: _buildPersonalInfoStep(),
                           ),
-                          const SizedBox(height: 20),
-
-                          CustomTextField(
-                            label: 'Email Address',
-                            hint: 'Enter your email',
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: Icon(
-                              PhosphorIcons.envelope(),
-                              color: AppTheme.textSecondary,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!EmailValidator.validate(value)) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
+                          // Step 2: Account Details
+                          Step(
+                            title: const Text('Account Details'),
+                            isActive: _currentStep >= 1,
+                            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                            content: _buildAccountDetailsStep(),
                           ),
-                          const SizedBox(height: 20),
-
-                          CustomTextField(
-                            label: 'Password',
-                            hint: 'Enter your password',
-                            controller: _passwordController,
-                            isPassword: true,
-                            prefixIcon: Icon(
-                              PhosphorIcons.lock(),
-                              color: AppTheme.textSecondary,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-
-                          CustomTextField(
-                            label: 'Confirm Password',
-                            hint: 'Confirm your password',
-                            controller: _confirmPasswordController,
-                            isPassword: true,
-                            prefixIcon: Icon(
-                              PhosphorIcons.lock(),
-                              color: AppTheme.textSecondary,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please confirm your password';
-                              }
-                              if (value != _passwordController.text) {
-                                return 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 32),
-
-                          Consumer<AuthProvider>(
-                            builder: (context, authProvider, child) {
-                              return CustomButton(
-                                text: 'Create Account',
-                                onPressed: _register,
-                                isLoading: authProvider.isLoading,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 24),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Already have an account? ',
-                                style: AppTheme.bodyStyle,
-                              ),
-                              GestureDetector(
-                                onTap: () => context.go('/login'),
-                                child: Text(
-                                  'Sign In',
-                                  style: AppTheme.bodyStyle.copyWith(
-                                    color: AppTheme.accentColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          // Step 3: Profile Photo
+                          Step(
+                            title: const Text('Profile Photo'),
+                            isActive: _currentStep >= 2,
+                            state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+                            content: _buildProfilePhotoStep(),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
