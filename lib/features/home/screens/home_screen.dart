@@ -5,17 +5,47 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/playlist_provider.dart';
+import '../../../core/services/movie_service.dart';
 import '../../../shared/widgets/welcome_header.dart';
-import '../../../shared/widgets/stat_card.dart';
 import '../../../shared/widgets/action_card.dart';
+import '../../../shared/widgets/movie_card.dart';
+import '../../../shared/widgets/movie_details_modal.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToMovies;
 
   const HomeScreen({
     super.key,
     this.onNavigateToMovies,
   });
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final MovieService _movieService = MovieService();
+  List<dynamic> _movies = [];
+  bool _isLoadingMovies = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMovies();
+  }
+
+  Future<void> _loadMovies() async {
+    setState(() => _isLoadingMovies = true);
+    try {
+      final movies = await _movieService.getMovies();
+      setState(() {
+        _movies = movies.take(4).toList();
+        _isLoadingMovies = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingMovies = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,108 +66,107 @@ class HomeScreen extends StatelessWidget {
               WelcomeHeader(user: user),
               const SizedBox(height: 32),
 
-              // Stats section
-              Text('Your Stats', style: AppTheme.titleStyle),
-              const SizedBox(height: 16),
+              // Quick actions
               Row(
                 children: [
                   Expanded(
-                    child: StatCard(
+                    child: ActionCard(
                       icon: PhosphorIcons.heart(PhosphorIconsStyle.fill),
-                      label: 'Favorites',
-                      value: favoritesCount.toString(),
-                      color: Colors.red,
+                      label: 'My Favorites',
+                      subtitle: '$favoritesCount ${favoritesCount == 1 ? 'movie' : 'movies'}',
+                      iconColor: Colors.red,
                       onTap: () => context.push('/favorites'),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: StatCard(
+                    child: ActionCard(
                       icon: PhosphorIcons.filmStrip(PhosphorIconsStyle.fill),
-                      label: 'Movies',
-                      value: 'Browse',
-                      color: AppTheme.secondaryColor,
-                      onTap: onNavigateToMovies,
+                      label: 'Browse Movies',
+                      iconColor: AppTheme.secondaryColor,
+                      onTap: widget.onNavigateToMovies ?? () {},
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 32),
 
-              // Quick actions
-              Text('Quick Actions', style: AppTheme.titleStyle),
-              const SizedBox(height: 16),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.3,
+              // Popular Movies Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ActionCard(
-                    icon: PhosphorIcons.heart(),
-                    label: 'My Favorites',
-                    iconColor: Colors.red,
-                    onTap: () => context.push('/favorites'),
-                  ),
-                  ActionCard(
-                    icon: PhosphorIcons.filmStrip(),
-                    label: 'Browse Movies',
-                    iconColor: AppTheme.secondaryColor,
-                    onTap: onNavigateToMovies ?? () {},
-                  ),
-                  if (user.isAdmin)
-                    ActionCard(
-                      icon: PhosphorIcons.shield(),
-                      label: 'Admin Panel',
-                      iconColor: AppTheme.accentColor,
-                      onTap: () => context.push('/admin'),
+                  Text('Popular Movies', style: AppTheme.titleStyle),
+                  TextButton.icon(
+                    onPressed: widget.onNavigateToMovies,
+                    icon: Icon(
+                      PhosphorIcons.arrowRight(),
+                      size: 16,
                     ),
-                  ActionCard(
-                    icon: PhosphorIcons.user(),
-                    label: 'Profile',
-                    iconColor: AppTheme.primaryColor,
-                    onTap: () => context.push('/profile'),
+                    label: const Text('View All'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-
-              // Info section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      PhosphorIcons.info(),
-                      color: AppTheme.primaryColor,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        'Browse movies and add them to your favorites. Your preferences help us understand what you love!',
-                        style: AppTheme.bodyStyle.copyWith(
-                          fontSize: 14,
-                        ),
+              const SizedBox(height: 16),
+              _isLoadingMovies
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                    )
+                  : _movies.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  PhosphorIcons.filmStrip(),
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No movies available',
+                                  style: AppTheme.bodyStyle.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _movies.length,
+                          itemBuilder: (context, index) {
+                            final movie = _movies[index];
+                            return MovieCard(
+                              movie: movie,
+                              onTap: () => _showMovieDetails(movie),
+                            );
+                          },
+                        ),
+              const SizedBox(height: 32),
             ],
           ),
         );
       },
+    );
+  }
+
+  void _showMovieDetails(dynamic movie) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => MovieDetailsModal(movie: movie),
     );
   }
 }

@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 class ActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final VoidCallback onTap;
   final Color? iconColor;
 
@@ -13,6 +14,7 @@ class ActionCard extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.iconColor,
+    this.subtitle,
   });
 
   @override
@@ -48,6 +50,17 @@ class ActionCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle!,
+                style: AppTheme.bodyStyle.copyWith(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),

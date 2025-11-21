@@ -80,6 +80,28 @@ class ProfileScreen extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
+                      if (user.age != null) ...[
+                        const SizedBox(height: 4),
+                        // Age
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              PhosphorIcons.cake(),
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${user.age} years old',
+                              style: AppTheme.bodyStyle.copyWith(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       // Role Badge
                       Container(
