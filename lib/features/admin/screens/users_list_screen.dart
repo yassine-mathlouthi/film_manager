@@ -6,6 +6,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/users_provider.dart';
 import '../../../core/models/user_model.dart';
+import '../widgets/users_search_filter.dart';
+import '../widgets/user_card.dart';
+import '../widgets/empty_users_view.dart';
+import '../widgets/error_view.dart';
 
 class UsersListScreen extends StatefulWidget {
   const UsersListScreen({super.key});
@@ -83,35 +87,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
           }
 
           if (usersProvider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    PhosphorIcons.warning(),
-                    size: 64,
-                    color: AppTheme.errorColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading users',
-                    style: AppTheme.titleStyle.copyWith(
-                      color: AppTheme.errorColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    usersProvider.error!,
-                    style: AppTheme.bodyStyle,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => usersProvider.fetchUsers(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            return ErrorView(
+              errorMessage: usersProvider.error,
+              onRetry: () => usersProvider.fetchUsers(),
             );
           }
 
@@ -125,72 +103,15 @@ class _UsersListScreenState extends State<UsersListScreen> {
           return Column(
             children: [
               // Search and filter section
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: AppTheme.backgroundColor,
-                child: Column(
-                  children: [
-                    // Search field
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search users by name or email...',
-                        prefixIcon: Icon(
-                          PhosphorIcons.magnifyingGlass(),
-                          color: AppTheme.textSecondary,
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(PhosphorIcons.x()),
-                                onPressed: () {
-                                  _searchController.clear();
-                                },
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Role filter
-                    Row(
-                      children: [
-                        Text(
-                          'Filter by role:',
-                          style: AppTheme.bodyStyle.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButton<String>(
-                            value: _selectedRole,
-                            isExpanded: true,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'all',
-                                child: Text('All Roles'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'admin',
-                                child: Text('Admin'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'user',
-                                child: Text('User'),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRole = value!;
-                              });
-                              _filterUsers();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              UsersSearchFilter(
+                searchController: _searchController,
+                selectedRole: _selectedRole,
+                onRoleChanged: (value) {
+                  setState(() {
+                    _selectedRole = value;
+                  });
+                  _filterUsers();
+                },
               ),
 
               // Users count
@@ -210,39 +131,25 @@ class _UsersListScreenState extends State<UsersListScreen> {
               // Users list
               Expanded(
                 child: _filteredUsers.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              PhosphorIcons.users(),
-                              size: 64,
-                              color: AppTheme.textLight,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No users found',
-                              style: AppTheme.titleStyle.copyWith(
-                                color: AppTheme.textLight,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Try adjusting your search or filter criteria',
-                              style: AppTheme.bodyStyle.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
+                    ? const EmptyUsersView()
                     : RefreshIndicator(
                         onRefresh: () => usersProvider.fetchUsers(),
                         child: ListView.builder(
                           itemCount: _filteredUsers.length,
                           itemBuilder: (context, index) {
                             final user = _filteredUsers[index];
-                            return _buildUserCard(user, usersProvider);
+                            return UserCard(
+                              user: user,
+                              onEdit: () => _showEditUserDialog(user),
+                              onDelete: () => _showDeleteUserDialog(
+                                user,
+                                usersProvider,
+                              ),
+                              onToggleStatus: () => _toggleUserStatus(
+                                user,
+                                usersProvider,
+                              ),
+                            );
                           },
                         ),
                       ),
@@ -252,134 +159,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
         },
       ),
     );
-  }
-
-  Widget _buildUserCard(User user, UsersProvider usersProvider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: user.isAdmin
-              ? AppTheme.accentColor
-              : AppTheme.secondaryColor,
-          child: Text(
-            user.firstName[0].toUpperCase(),
-            style: AppTheme.subtitleStyle.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(user.fullName, style: AppTheme.subtitleStyle),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              user.email,
-              style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: user.isAdmin
-                        ? AppTheme.accentColor.withOpacity(0.1)
-                        : AppTheme.secondaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    user.role.toUpperCase(),
-                    style: AppTheme.captionStyle.copyWith(
-                      color: user.isAdmin
-                          ? AppTheme.accentColor
-                          : AppTheme.secondaryColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Joined ${_formatDate(user.createdAt)}',
-                  style: AppTheme.captionStyle.copyWith(fontSize: 11),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: Icon(
-            PhosphorIcons.dotsThreeVertical(),
-            color: AppTheme.textSecondary,
-          ),
-          onSelected: (value) {
-            switch (value) {
-              case 'edit':
-                _showEditUserDialog(user);
-                break;
-              case 'delete':
-                _showDeleteUserDialog(user, usersProvider);
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(PhosphorIcons.pencil()),
-                  const SizedBox(width: 8),
-                  const Text('Edit'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(PhosphorIcons.trash(), color: AppTheme.errorColor),
-                  const SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} years ago';
-    } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} months ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
-    } else {
-      return 'Today';
-    }
   }
 
   void _showAddUserDialog() {
@@ -461,5 +240,60 @@ class _UsersListScreenState extends State<UsersListScreen> {
         ],
       ),
     );
+  }
+
+  void _toggleUserStatus(User user, UsersProvider usersProvider) async {
+    final action = user.isActive ? 'deactivate' : 'activate';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${action == 'activate' ? 'Activate' : 'Deactivate'} User'),
+        content: Text(
+          'Are you sure you want to $action ${user.fullName}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: action == 'activate' ? Colors.green : Colors.orange,
+            ),
+            child: Text(action == 'activate' ? 'Activate' : 'Deactivate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      final success = await usersProvider.toggleUserStatus(
+        user.id,
+        !user.isActive,
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${user.fullName} has been ${action}d',
+            ),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        _filterUsers(); // Refresh the filtered list
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              usersProvider.error ?? 'Failed to $action user',
+            ),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 }

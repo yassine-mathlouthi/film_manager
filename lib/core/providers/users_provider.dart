@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
-import '../data/demo_data.dart';
+import '../services/users_service.dart';
 
 class UsersProvider extends ChangeNotifier {
+  final UsersService _usersService = UsersService();
+  
   List<User> _users = [];
   bool _isLoading = false;
   String? _error;
@@ -16,14 +18,10 @@ class UsersProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
-      // Convert static data to User objects
-      _users = DemoData.getUsersList();
+      _users = await _usersService.getAllUsers();
     } catch (e) {
-      _setError('Failed to fetch users. Please check your connection.');
+      _setError(e.toString());
     }
 
     _setLoading(false);
@@ -34,22 +32,47 @@ class UsersProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
     try {
-      // Remove user from static data
-      DemoData.users.removeWhere((user) => user['id'] == userId);
+      await _usersService.deleteUser(userId);
       _users.removeWhere((user) => user.id == userId);
-
       _setLoading(false);
       return true;
     } catch (e) {
-      _setError('Delete failed. Please try again.');
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
     }
+  }
 
-    _setLoading(false);
-    return false;
+  // Toggle user active status
+  Future<bool> toggleUserStatus(String userId, bool isActive) async {
+    _clearError();
+
+    try {
+      await _usersService.toggleUserStatus(userId, isActive);
+      
+      // Update local state
+      final index = _users.indexWhere((user) => user.id == userId);
+      if (index != -1) {
+        _users[index] = User(
+          id: _users[index].id,
+          email: _users[index].email,
+          firstName: _users[index].firstName,
+          lastName: _users[index].lastName,
+          role: _users[index].role,
+          isActive: isActive,
+          age: _users[index].age,
+          profileImageUrl: _users[index].profileImageUrl,
+          createdAt: _users[index].createdAt,
+        );
+        notifyListeners();
+      }
+      
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    }
   }
 
   // Search users
@@ -82,6 +105,5 @@ class UsersProvider extends ChangeNotifier {
 
   void _clearError() {
     _error = null;
-    notifyListeners();
   }
 }
