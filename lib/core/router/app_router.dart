@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/register_step1_screen.dart';
-import '../../features/auth/screens/register_step2_screen.dart';
-import '../../features/auth/screens/register_step3_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
 import '../../features/home/screens/main_navigation_screen.dart';
 import '../../features/home/screens/favorites_screen.dart';
 import '../../features/home/screens/profile_screen.dart';
@@ -23,23 +21,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/register',
       name: 'register',
-      builder: (context, state) => const RegisterStep1Screen(),
-    ),
-    GoRoute(
-      path: '/register/step2',
-      name: 'register-step2',
-      builder: (context, state) {
-        final step1Data = state.extra as Map<String, dynamic>;
-        return RegisterStep2Screen(step1Data: step1Data);
-      },
-    ),
-    GoRoute(
-      path: '/register/step3',
-      name: 'register-step3',
-      builder: (context, state) {
-        final previousData = state.extra as Map<String, dynamic>;
-        return RegisterStep3Screen(previousData: previousData);
-      },
+      builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
       path: '/home',

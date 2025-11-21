@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/users_provider.dart';
 import '../../../core/models/user_model.dart';
+import '../../../shared/widgets/confirmation_dialog.dart';
 import '../widgets/users_search_filter.dart';
 import '../widgets/user_card.dart';
 import '../widgets/empty_users_view.dart';
@@ -245,27 +246,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
   void _toggleUserStatus(User user, UsersProvider usersProvider) async {
     final action = user.isActive ? 'deactivate' : 'activate';
 
-    final confirm = await showDialog<bool>(
+    final confirm = await ConfirmationDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('${action == 'activate' ? 'Activate' : 'Deactivate'} User'),
-        content: Text(
-          'Are you sure you want to $action ${user.fullName}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: action == 'activate' ? Colors.green : Colors.orange,
-            ),
-            child: Text(action == 'activate' ? 'Activate' : 'Deactivate'),
-          ),
-        ],
-      ),
+      title: '${action == 'activate' ? 'Activate' : 'Deactivate'} User',
+      message: 'Are you sure you want to $action ${user.fullName}?',
+      confirmText: action == 'activate' ? 'Activate' : 'Deactivate',
+      confirmColor: action == 'activate' ? Colors.green : Colors.orange,
+      icon: user.isActive ? PhosphorIcons.prohibit() : PhosphorIcons.checkCircle(),
     );
 
     if (confirm == true && mounted) {
@@ -289,6 +276,27 @@ class _UsersListScreenState extends State<UsersListScreen> {
           SnackBar(
             content: Text(
               usersProvider.error ?? 'Failed to $action user',
+            ),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+    if (confirm == true && mounted) {
+      final success = await usersProvider.deleteUser(user.id);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${user.fullName} has been deleted'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        _filterUsers();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              usersProvider.error ?? 'Failed to delete user',
             ),
             backgroundColor: AppTheme.errorColor,
           ),
