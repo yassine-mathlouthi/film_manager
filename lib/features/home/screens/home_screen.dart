@@ -98,12 +98,7 @@ class HomeScreen extends StatelessWidget {
                     icon: PhosphorIcons.user(),
                     label: 'Profile',
                     iconColor: AppTheme.primaryColor,
-                    onTap: () {
-                      // TODO: Navigate to profile
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Profile coming soon!')),
-                      );
-                    },
+                    onTap: () => context.push('/profile'),
                   ),
                 ],
               ),

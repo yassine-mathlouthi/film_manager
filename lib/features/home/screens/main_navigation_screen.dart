@@ -50,10 +50,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         title: Text(_currentIndex == 0 ? 'Film Manager' : 'Movies'),
         actions: [
           IconButton(
-            icon: Icon(PhosphorIcons.gear()),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
+            icon: Icon(PhosphorIcons.user()),
+            onPressed: () => context.push('/profile'),
           ),
           IconButton(
             icon: Icon(PhosphorIcons.signOut()),

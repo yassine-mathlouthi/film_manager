@@ -8,6 +8,7 @@ import '../../features/auth/screens/register_step2_screen.dart';
 import '../../features/auth/screens/register_step3_screen.dart';
 import '../../features/home/screens/main_navigation_screen.dart';
 import '../../features/home/screens/favorites_screen.dart';
+import '../../features/home/screens/profile_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/users_list_screen.dart';
 
@@ -56,6 +57,18 @@ final GoRouter appRouter = GoRouter(
       path: '/favorites',
       name: 'favorites',
       builder: (context, state) => const FavoritesScreen(),
+      redirect: (context, state) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (!authProvider.isLoggedIn) {
+          return '/login';
+        }
+        return null;
+      },
+    ),
+    GoRoute(
+      path: '/profile',
+      name: 'profile',
+      builder: (context, state) => const ProfileScreen(),
       redirect: (context, state) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (!authProvider.isLoggedIn) {
