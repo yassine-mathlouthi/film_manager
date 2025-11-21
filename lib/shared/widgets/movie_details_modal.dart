@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/providers/auth_provider.dart';
+import '../../core/providers/playlist_provider.dart';
 
 class MovieDetailsModal extends StatelessWidget {
   final dynamic movie;
@@ -13,6 +16,7 @@ class MovieDetailsModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String title = movie['primaryTitle'] ?? 'Unknown Title';
+    final String movieId = movie['id']?.toString() ?? '';
     final String? imageUrl = movie['primaryImage'];
     final String? type = movie['type'];
     final String? description = movie['description'];
@@ -42,7 +46,12 @@ class MovieDetailsModal extends StatelessWidget {
               const SizedBox(height: 20),
               if (imageUrl != null) _buildPoster(imageUrl),
               const SizedBox(height: 20),
-              _buildTitle(title),
+              Row(
+                children: [
+                  Expanded(child: _buildTitle(title)),
+                  _buildFavoriteButton(context, movieId),
+                ],
+              ),
               const SizedBox(height: 12),
               _buildMetrics(
                 rating: rating,
@@ -112,6 +121,53 @@ class MovieDetailsModal extends StatelessWidget {
 
   Widget _buildTitle(String title) {
     return Text(title, style: AppTheme.headlineStyle);
+  }
+
+  Widget _buildFavoriteButton(BuildContext context, String movieId) {
+    if (movieId.isEmpty) return const SizedBox.shrink();
+
+    return Consumer2<AuthProvider, PlaylistProvider>(
+      builder: (context, authProvider, playlistProvider, child) {
+        final isFavorite = playlistProvider.isFavorite(movieId);
+        final userId = authProvider.currentUser?.id;
+
+        if (userId == null) return const SizedBox.shrink();
+
+        return IconButton(
+          onPressed: () async {
+            try {
+              await playlistProvider.toggleFavorite(userId, movieId);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isFavorite ? 'Removed from favorites' : 'Added to favorites',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          icon: Icon(
+            isFavorite
+                ? PhosphorIcons.heart(PhosphorIconsStyle.fill)
+                : PhosphorIcons.heart(),
+            color: isFavorite ? Colors.red : Colors.grey[600],
+            size: 28,
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildMetrics({

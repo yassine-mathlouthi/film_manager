@@ -7,6 +7,7 @@ class User {
   final String lastName;
   final String role;
   final int? age;
+  final bool isActive;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
   final String? profileImageUrl;
@@ -18,6 +19,7 @@ class User {
     required this.lastName,
     required this.role,
     this.age,
+    this.isActive = true,
     required this.createdAt,
     this.lastLoginAt,
     this.profileImageUrl,
@@ -32,6 +34,7 @@ class User {
       lastName: json['lastName'] as String,
       role: json['role'] as String,
       age: json['age'] as int?,
+      isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastLoginAt: json['lastLoginAt'] != null
           ? DateTime.parse(json['lastLoginAt'] as String)
@@ -49,6 +52,7 @@ class User {
       'lastName': lastName,
       'role': role,
       'age': age,
+      'isActive': isActive,
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'profileImageUrl': profileImageUrl,
@@ -66,6 +70,7 @@ class User {
     String? lastName,
     String? role,
     int? age,
+    bool? isActive,
     DateTime? createdAt,
     DateTime? lastLoginAt,
     String? profileImageUrl,
@@ -77,6 +82,7 @@ class User {
       lastName: lastName ?? this.lastName,
       role: role ?? this.role,
       age: age ?? this.age,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,

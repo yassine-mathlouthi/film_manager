@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/users_provider.dart';
+import 'core/providers/playlist_provider.dart';
 import 'core/router/app_router.dart';
 
 void main() async {
@@ -26,6 +27,7 @@ class FilmManagerApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UsersProvider()),
+        ChangeNotifierProvider(create: (_) => PlaylistProvider()),
       ],
       child: MaterialApp.router(
         title: 'Film Manager',

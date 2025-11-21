@@ -11,7 +11,6 @@ class MovieService {
     final url = Uri.parse("https://$apiHost/api/imdb/most-popular-movies");
     print(url);
 
-
     final response = await http.get(
       url,
       headers: {

@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/playlist_provider.dart';
 import 'home_screen.dart';
 import 'movies_screen.dart';
 
@@ -16,13 +17,34 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const MoviesScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final authProvider = context.read<AuthProvider>();
+    final playlistProvider = context.read<PlaylistProvider>();
+    
+    if (authProvider.currentUser != null) {
+      await playlistProvider.loadFavorites(authProvider.currentUser!.id);
+    }
+  }
+
+  void _navigateToTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      HomeScreen(onNavigateToMovies: () => _navigateToTab(1)),
+      const MoviesScreen(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? 'Film Manager' : 'Movies'),
@@ -80,6 +102,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
+              final playlistProvider = Provider.of<PlaylistProvider>(context, listen: false);
+              playlistProvider.clear();
               Provider.of<AuthProvider>(context, listen: false).logout();
               context.go('/login');
             },

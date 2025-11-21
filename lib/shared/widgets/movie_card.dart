@@ -15,7 +15,7 @@ class MovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title = movie['primaryTitle'] ?? APIConstants.unknownTitle;
+    final String title = movie['primaryTitle'] ?? 'Unknown Title';
     final String? imageUrl = movie['primaryImage'];
     final List<dynamic>? genres = movie['genres'];
     final double? rating = movie['averageRating']?.toDouble();
