@@ -40,7 +40,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _screens = [
+    final List<Widget> screens = [
       HomeScreen(onNavigateToMovies: () => _navigateToTab(1)),
       const MoviesScreen(),
     ];
@@ -49,6 +49,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? 'Film Manager' : 'Movies'),
         actions: [
+          IconButton(
+      icon: Icon(PhosphorIcons.users()), // Icône pour le matching
+      tooltip: 'Find Matches',
+      onPressed: () => context.push('/matching'),
+    ),
           IconButton(
             icon: Icon(PhosphorIcons.user()),
             onPressed: () => context.push('/profile'),
@@ -61,7 +66,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

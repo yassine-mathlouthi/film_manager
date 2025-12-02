@@ -9,6 +9,7 @@ import '../../features/home/screens/favorites_screen.dart';
 import '../../features/home/screens/profile_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/users_list_screen.dart';
+import '../../features/home/screens/matching_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -89,5 +90,15 @@ final GoRouter appRouter = GoRouter(
         return null;
       },
     ),
+    GoRoute(
+  path: '/matching',
+  name: 'matching',
+  builder: (context, state) => const MatchingScreen(),
+  redirect: (context, state) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isLoggedIn) return '/login';
+    return null;
+  },
+),
   ],
 );
