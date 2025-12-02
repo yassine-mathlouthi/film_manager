@@ -8,6 +8,7 @@ import 'core/providers/auth_provider.dart';
 import 'core/providers/users_provider.dart';
 import 'core/providers/playlist_provider.dart';
 import 'core/router/app_router.dart';
+import 'core/providers/matching_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,8 @@ class FilmManagerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UsersProvider()),
         ChangeNotifierProvider(create: (_) => PlaylistProvider()),
+        ChangeNotifierProvider(create: (_) => MatchingProvider()),
+
       ],
       child: MaterialApp.router(
         title: 'Film Manager',
