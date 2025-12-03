@@ -94,6 +94,47 @@ class MoviesService {
     }
   }
 
+  // Get multiple movies by IDs
+  Future<List<Movie>> getMoviesByIds(List<String> movieIds) async {
+    try {
+      if (movieIds.isEmpty) return [];
+      
+      final movies = <Movie>[];
+      
+      // Fetch movies in batches (Firestore has a limit of 10 for 'in' queries)
+      for (var i = 0; i < movieIds.length; i += 10) {
+        final batch = movieIds.skip(i).take(10).toList();
+        final snapshot = await _firestore
+            .collection('movies')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          movies.add(Movie(
+            id: doc.id,
+            title: data['title'] ?? '',
+            description: data['description'],
+            posterUrl: data['posterUrl'],
+            year: data['year'],
+            genres: data['genres'] != null
+                ? List<String>.from(data['genres'] as List)
+                : [],
+            rating: data['rating'] != null 
+                ? (data['rating'] as num).toDouble() 
+                : null,
+            createdAt: _parseDateTime(data['createdAt']),
+            createdBy: data['createdBy'] ?? '',
+          ));
+        }
+      }
+      
+      return movies;
+    } catch (e) {
+      throw Exception('Failed to fetch movies: $e');
+    }
+  }
+
   // Add new movie
   Future<String> addMovie(Movie movie) async {
     try {

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/models/user_match_model.dart';
+import '../../../core/models/movie_model.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/services/movie_service.dart';
+import '../../../core/services/movies_service.dart';
 
 class UserMatchTile extends StatefulWidget {
   final UserMatch userMatch;
@@ -15,7 +16,7 @@ class UserMatchTile extends StatefulWidget {
 
 class _UserMatchTileState extends State<UserMatchTile> {
   bool _isExpanded = false;
-  List<Map<String, dynamic>> _commonMovies = [];
+  List<Movie> _commonMovies = [];
   bool _isLoadingMovies = false;
 
   @override
@@ -30,25 +31,12 @@ class _UserMatchTileState extends State<UserMatchTile> {
     setState(() => _isLoadingMovies = true);
 
     try {
-      final movieService = MovieService();
-      final allMovies = await movieService.getMovies();
-
-      final commonMovies = <Map<String, dynamic>>[];
-      
-      for (var movieId in widget.userMatch.commonMovieIds) {
-        final movie = allMovies.firstWhere(
-          (m) => m['id']?.toString() == movieId,
-          orElse: () => null,
-        );
-        
-        if (movie != null) {
-          commonMovies.add(movie);
-        }
-      }
+      final moviesService = MoviesService();
+      final movies = await moviesService.getMoviesByIds(widget.userMatch.commonMovieIds);
 
       if (mounted) {
         setState(() {
-          _commonMovies = commonMovies;
+          _commonMovies = movies;
           _isLoadingMovies = false;
         });
       }
@@ -305,7 +293,7 @@ class _UserMatchTileState extends State<UserMatchTile> {
     );
   }
 
-  Widget _buildMovieCard(Map<String, dynamic> movie) {
+  Widget _buildMovieCard(Movie movie) {
     return Container(
       width: 90,
       margin: const EdgeInsets.only(right: 12),
@@ -322,9 +310,9 @@ class _UserMatchTileState extends State<UserMatchTile> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: movie['imageUrl'] != null
+              child: movie.posterUrl != null
                   ? Image.network(
-                      movie['imageUrl'],
+                      movie.posterUrl!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return _buildMoviePlaceholder();
@@ -336,7 +324,7 @@ class _UserMatchTileState extends State<UserMatchTile> {
           const SizedBox(height: 6),
           // Movie Title
           Text(
-            movie['title'] ?? 'Unknown',
+            movie.title,
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
