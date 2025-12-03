@@ -126,6 +126,17 @@ class MoviesService {
   // Update movie
   Future<void> updateMovie(String movieId, Map<String, dynamic> updates) async {
     try {
+      // If posterUrl is a local file path, upload to Cloudinary
+      if (updates.containsKey('posterUrl')) {
+        final posterUrl = updates['posterUrl'] as String?;
+        if (posterUrl != null && posterUrl.isNotEmpty && !posterUrl.startsWith('http')) {
+          final uploadedUrl = await _cloudinaryService.uploadMoviePoster(posterUrl);
+          if (uploadedUrl != null) {
+            updates['posterUrl'] = uploadedUrl;
+          }
+        }
+      }
+      
       await _firestore.collection('movies').doc(movieId).update(updates);
     } catch (e) {
       throw Exception('Failed to update movie: $e');
