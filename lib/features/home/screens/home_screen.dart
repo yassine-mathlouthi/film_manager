@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/playlist_provider.dart';
 import '../../../core/providers/matching_provider.dart';
-import '../../../core/services/movie_service.dart';
+import '../../../core/providers/movies_provider.dart';
 import '../../../shared/widgets/welcome_header.dart';
 import '../../../shared/widgets/action_card.dart';
 import '../../../shared/widgets/movie_card.dart';
@@ -25,28 +25,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final MovieService _movieService = MovieService();
-  List<dynamic> _movies = [];
-  bool _isLoadingMovies = false;
-
   @override
   void initState() {
     super.initState();
-    _loadMovies();
-    _loadMatches();
+    _loadData();
   }
 
-  Future<void> _loadMovies() async {
-    setState(() => _isLoadingMovies = true);
-    try {
-      final movies = await _movieService.getMovies();
-      setState(() {
-        _movies = movies.take(4).toList();
-        _isLoadingMovies = false;
-      });
-    } catch (e) {
-      setState(() => _isLoadingMovies = false);
-    }
+  Future<void> _loadData() async {
+    final moviesProvider = Provider.of<MoviesProvider>(context, listen: false);
+    await moviesProvider.fetchMovies();
+    await _loadMatches();
   }
 
   Future<void> _loadMatches() async {
@@ -61,8 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<AuthProvider, PlaylistProvider, MatchingProvider>(
-      builder: (context, authProvider, playlistProvider, matchingProvider, child) {
+    return Consumer4<AuthProvider, PlaylistProvider, MatchingProvider, MoviesProvider>(
+      builder: (context, authProvider, playlistProvider, matchingProvider, moviesProvider, child) {
         final user = authProvider.currentUser;
         if (user == null) {
           return const Center(child: CircularProgressIndicator());
@@ -70,12 +58,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
         final favoritesCount = playlistProvider.favoriteMovieIds.length;
         final topMatches = matchingProvider.matches.take(3).toList();
+        
+        // Convert Movie objects to TMDB-like format for compatibility with MovieCard
+        final movies = moviesProvider.movies.take(4).map((movie) => {
+          'id': movie.id,
+          'primaryTitle': movie.title,
+          'primaryImage': movie.posterUrl,
+          'genres': movie.genres,
+          'averageRating': movie.rating,
+          'startYear': movie.year != null ? int.tryParse(movie.year!) : null,
+          'description': movie.description,
+        }).toList();
+        final isLoadingMovies = moviesProvider.isLoading;
 
         return RefreshIndicator(
-          onRefresh: () async {
-            await _loadMovies();
-            await _loadMatches();
-          },
+          onRefresh: _loadData,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -132,14 +129,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _isLoadingMovies
+                isLoadingMovies
                     ? const Center(
                         child: Padding(
                           padding: EdgeInsets.all(32.0),
                           child: CircularProgressIndicator(),
                         ),
                       )
-                    : _movies.isEmpty
+                    : movies.isEmpty
                         ? Center(
                             child: Padding(
                               padding: const EdgeInsets.all(32.0),
@@ -164,9 +161,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         : ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _movies.length,
+                            itemCount: movies.length,
                             itemBuilder: (context, index) {
-                              final movie = _movies[index];
+                              final movie = movies[index];
                               return MovieCard(
                                 movie: movie,
                                 onTap: () => _showMovieDetails(movie),

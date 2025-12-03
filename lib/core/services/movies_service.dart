@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/movie_model.dart';
+import './cloudinary_service.dart';
 
 class MoviesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
   // Fetch all movies
   Future<List<Movie>> getAllMovies() async {
@@ -94,10 +97,20 @@ class MoviesService {
   // Add new movie
   Future<String> addMovie(Movie movie) async {
     try {
+      String? posterUrl = movie.posterUrl;
+      
+      // If posterUrl is a local file path, upload to Cloudinary
+      if (posterUrl != null && posterUrl.isNotEmpty && !posterUrl.startsWith('http')) {
+        final uploadedUrl = await _cloudinaryService.uploadMoviePoster(posterUrl);
+        if (uploadedUrl != null) {
+          posterUrl = uploadedUrl;
+        }
+      }
+      
       final docRef = await _firestore.collection('movies').add({
         'title': movie.title,
         'description': movie.description,
-        'posterUrl': movie.posterUrl,
+        'posterUrl': posterUrl,
         'year': movie.year,
         'genres': movie.genres,
         'rating': movie.rating,
