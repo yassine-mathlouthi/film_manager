@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/playlist_provider.dart';
+import '../../core/models/movie_model.dart';
 
 class MovieDetailsModal extends StatelessWidget {
   final dynamic movie;
@@ -15,20 +16,94 @@ class MovieDetailsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title = movie['primaryTitle'] ?? 'Unknown Title';
-    final String movieId = movie['id']?.toString() ?? '';
-    final String? imageUrl = movie['primaryImage'];
-    final String? type = movie['type'];
-    final String? description = movie['description'];
-    final String? originalTitle = movie['originalTitle'];
-    final List<dynamic>? genres = movie['genres'];
-    final double? rating = movie['averageRating']?.toDouble();
-    final int? numVotes = movie['numVotes'];
-    final int? year = movie['startYear'];
-    final int? runtime = movie['runtimeMinutes'];
-    final String? releaseDate = movie['releaseDate'];
-    final String? contentRating = movie['contentRating'];
-    final List<dynamic>? interests = movie['interests'];
+    // Handle both Movie objects and Map (for API movies)
+    String title;
+    String movieId;
+    String? imageUrl;
+    String? type;
+    String? description;
+    String? originalTitle;
+    List<dynamic>? genres;
+    double? rating;
+    int? numVotes;
+    int? year;
+    int? runtime;
+    String? releaseDate;
+    String? contentRating;
+    List<dynamic>? interests;
+
+    if (movie is Movie) {
+      // Firestore movie (admin-created)
+      title = movie.title;
+      movieId = movie.id;
+      imageUrl = movie.posterUrl;
+      type = null;
+      description = movie.description;
+      originalTitle = null;
+      genres = movie.genres;
+      rating = movie.rating;
+      numVotes = null;
+      year = movie.year;
+      runtime = null;
+      releaseDate = null;
+      contentRating = null;
+      interests = null;
+    } else if (movie is Map) {
+      // API movie or converted Firestore movie
+      title = movie['title'] ?? movie['primaryTitle'] ?? 'Unknown Title';
+      movieId = movie['id']?.toString() ?? '';
+      imageUrl = movie['image'] ?? movie['posterUrl'] ?? movie['primaryImage'];
+      type = movie['type'];
+      description = movie['description'];
+      originalTitle = movie['originalTitle'];
+      genres = movie['genres'];
+      
+      // Handle rating conversion
+      final ratingValue = movie['rating'] ?? movie['averageRating'];
+      if (ratingValue != null) {
+        if (ratingValue is num) {
+          rating = ratingValue.toDouble();
+        } else if (ratingValue is String) {
+          rating = double.tryParse(ratingValue);
+        }
+      } else {
+        rating = null;
+      }
+      
+      numVotes = movie['numVotes'];
+      
+      // Handle year conversion
+      final yearValue = movie['year'] ?? movie['startYear'];
+      if (yearValue != null) {
+        if (yearValue is int) {
+          year = yearValue;
+        } else if (yearValue is String) {
+          year = int.tryParse(yearValue);
+        }
+      } else {
+        year = null;
+      }
+      
+      runtime = movie['runtimeMinutes'];
+      releaseDate = movie['releaseDate'];
+      contentRating = movie['contentRating'];
+      interests = movie['interests'];
+    } else {
+      title = 'Unknown Title';
+      movieId = '';
+      imageUrl = null;
+      type = null;
+      description = null;
+      originalTitle = null;
+      genres = null;
+      rating = null;
+      numVotes = null;
+      year = null;
+      runtime = null;
+      releaseDate = null;
+      contentRating = null;
+      interests = null;
+    }
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,

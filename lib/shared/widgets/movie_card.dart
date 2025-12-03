@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/constants/ui_constants.dart';
+import '../../core/models/movie_model.dart';
 
 class MovieCard extends StatelessWidget {
   final dynamic movie;
@@ -15,11 +16,56 @@ class MovieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String title = movie['primaryTitle'] ?? 'Unknown Title';
-    final String? imageUrl = movie['primaryImage'];
-    final List<dynamic>? genres = movie['genres'];
-    final double? rating = movie['averageRating']?.toDouble();
-    final int? year = movie['startYear'];
+    // Handle both Movie objects and Map (for API movies)
+    String title;
+    String? imageUrl;
+    List<dynamic>? genres;
+    double? rating;
+    int? year;
+
+    if (movie is Movie) {
+      // Firestore movie (admin-created)
+      title = movie.title;
+      imageUrl = movie.posterUrl;
+      genres = movie.genres;
+      rating = movie.rating;
+      year = movie.year;
+    } else if (movie is Map) {
+      // API movie or converted Firestore movie
+      title = movie['title'] ?? movie['primaryTitle'] ?? 'Unknown Title';
+      imageUrl = movie['image'] ?? movie['posterUrl'] ?? movie['primaryImage'];
+      genres = movie['genres'];
+      
+      // Handle rating conversion (could be double, int, or String)
+      final ratingValue = movie['rating'] ?? movie['averageRating'];
+      if (ratingValue != null) {
+        if (ratingValue is num) {
+          rating = ratingValue.toDouble();
+        } else if (ratingValue is String) {
+          rating = double.tryParse(ratingValue);
+        }
+      } else {
+        rating = null;
+      }
+      
+      // Handle year conversion (could be int or String)
+      final yearValue = movie['year'] ?? movie['startYear'];
+      if (yearValue != null) {
+        if (yearValue is int) {
+          year = yearValue;
+        } else if (yearValue is String) {
+          year = int.tryParse(yearValue);
+        }
+      } else {
+        year = null;
+      }
+    } else {
+      title = 'Unknown Title';
+      imageUrl = null;
+      genres = null;
+      rating = null;
+      year = null;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: UIConstants.spacingXLarge),
