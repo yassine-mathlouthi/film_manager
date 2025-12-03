@@ -10,6 +10,7 @@ import '../../features/home/screens/profile_screen.dart';
 import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/users_list_screen.dart';
 import '../../features/home/screens/matching_screen.dart';
+import '../../features/admin/screens/movies_list_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -99,6 +100,10 @@ final GoRouter appRouter = GoRouter(
     if (!authProvider.isLoggedIn) return '/login';
     return null;
   },
+),
+   GoRoute(
+  path: '/admin/movies',
+  builder: (context, state) => const MoviesListScreen(),
 ),
   ],
 );

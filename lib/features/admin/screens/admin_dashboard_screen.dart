@@ -202,9 +202,9 @@ class AdminDashboardScreen extends StatelessWidget {
                 label: 'Manage Films',
                 subtitle: 'Add, edit, or remove films',
                 color: AppTheme.secondaryColor,
-                onTap: () {
-                  // TODO: Navigate to films management
-                },
+                onTap: 
+                  () => context.go('/admin/movies'),
+                
               ),
             ),
           ],
