@@ -136,27 +136,19 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      // Update in Firebase
+      // Update in Firebase (this will handle image upload if imagePath is provided)
       await _firebaseAuthService.updateUserProfile(
         uid: _currentUser!.id,
         updates: updates,
       );
 
-      // Update current user data locally
-      final updatedUserData = {
-        'id': _currentUser!.id,
-        'email': _currentUser!.email,
-        'firstName': updates['firstName'] ?? _currentUser!.firstName,
-        'lastName': updates['lastName'] ?? _currentUser!.lastName,
-        'role': _currentUser!.role,
-        'createdAt': _currentUser!.createdAt.toIso8601String(),
-        'lastLoginAt': _currentUser!.lastLoginAt?.toIso8601String(),
-        'profileImageUrl':
-            updates['profileImageUrl'] ?? _currentUser!.profileImageUrl,
-      };
-
-      _currentUser = User.fromJson(updatedUserData);
-      await StorageService.saveUser(_currentUser!);
+      // Fetch the updated user data from Firestore to get the new profileImageUrl
+      final userData = await _firebaseAuthService.getUserData(_currentUser!.id);
+      
+      if (userData != null) {
+        _currentUser = User.fromJson(userData);
+        await StorageService.saveUser(_currentUser!);
+      }
 
       _setLoading(false);
       return true;

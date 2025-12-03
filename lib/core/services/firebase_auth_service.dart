@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:io';
+import 'cloudinary_service.dart';
 
 class FirebaseAuthService {
   final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+
 
   // Get current Firebase user
   firebase_auth.User? get currentFirebaseUser => _firebaseAuth.currentUser;
@@ -31,7 +31,7 @@ class FirebaseAuthService {
       if (credential.user != null) {
         // Fetch user data from Firestore
         print("Fetching user data from Firestore...");
-        final userData = await _getUserData(credential.user!.uid);
+        final userData = await getUserData(credential.user!.uid);
         print("✅ User data fetched successfully");
         return userData;
       }
@@ -73,14 +73,19 @@ class FirebaseAuthService {
       if (credential.user != null) {
         String? profileImageUrl;
         
-        // Upload profile image if provided
+        // Upload profile image to Cloudinary if provided
         if (imagePath != null) {
           try {
-            print("Uploading profile image...");
-            final ref = _storage.ref().child('profile_images/${credential.user!.uid}.jpg');
-            await ref.putFile(File(imagePath));
-            profileImageUrl = await ref.getDownloadURL();
-            print("✅ Profile image uploaded: $profileImageUrl");
+            print("Uploading profile image to Cloudinary...");
+            profileImageUrl = await _cloudinaryService.uploadProfileImage(
+              imagePath, 
+              credential.user!.uid,
+            );
+            if (profileImageUrl != null) {
+              print("✅ Profile image uploaded to Cloudinary: $profileImageUrl");
+            } else {
+              print("⚠️ Cloudinary upload returned null");
+            }
           } catch (e) {
             print("⚠️ Failed to upload profile image: $e");
             // Continue registration even if image upload fails
@@ -137,7 +142,8 @@ class FirebaseAuthService {
   }
 
   // Get user data from Firestore
-  Future<Map<String, dynamic>?> _getUserData(String uid) async {
+  // Get user data from Firestore
+  Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
       print("Fetching user document for UID: $uid");
       final doc = await _firestore.collection('users').doc(uid).get();
@@ -173,8 +179,27 @@ class FirebaseAuthService {
     required Map<String, dynamic> updates,
   }) async {
     try {
+      // Check if there's an image to upload
+      if (updates.containsKey('imagePath') && updates['imagePath'] != null) {
+        final imagePath = updates['imagePath'] as String;
+        print("Uploading new profile image to Cloudinary...");
+        
+        final imageUrl = await _cloudinaryService.uploadProfileImage(imagePath, uid);
+        
+        if (imageUrl != null) {
+          updates['profileImageUrl'] = imageUrl;
+          print("✅ Profile image updated: $imageUrl");
+        } else {
+          print("⚠️ Failed to upload profile image");
+        }
+        
+        // Remove imagePath from updates as it's not stored in Firestore
+        updates.remove('imagePath');
+      }
+      
       await _firestore.collection('users').doc(uid).update(updates);
     } catch (e) {
+      print("❌ Error updating profile: $e");
       throw 'Failed to update profile. Please try again.';
     }
   }

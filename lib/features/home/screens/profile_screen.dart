@@ -16,6 +16,13 @@ class ProfileScreen extends StatelessWidget {
         title: const Text('Profile'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(PhosphorIcons.pencilSimple()),
+            onPressed: () => context.push('/profile/edit'),
+            tooltip: 'Edit Profile',
+          ),
+        ],
       ),
       body: Consumer2<AuthProvider, PlaylistProvider>(
         builder: (context, authProvider, playlistProvider, child) {
