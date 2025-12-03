@@ -4,7 +4,7 @@ import '../models/playlist_model.dart';
 class PlaylistService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Get user's playlist (stores RapidAPI movie IDs)
+  // Get user's playlist
   Future<Playlist?> getUserPlaylist(String userId) async {
     try {
       final snapshot = await _firestore
@@ -16,8 +16,6 @@ class PlaylistService {
       if (snapshot.docs.isNotEmpty) {
         return Playlist.fromJson({...snapshot.docs.first.data(), 'id': snapshot.docs.first.id});
       }
-      
-      // Create playlist if doesn't exist
       return await _createPlaylist(userId);
     } catch (e) {
       throw 'Failed to get playlist: $e';
@@ -74,6 +72,29 @@ class PlaylistService {
       }
     } catch (e) {
       throw 'Failed to remove movie from playlist: $e';
+    }
+  }
+
+  // --- NOUVEAU : Remove movie from all playlists ---
+  Future<void> removeMovieFromAllPlaylists(String movieId) async {
+    try {
+      final snapshot = await _firestore.collection('playlists').get();
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final playlistId = doc.id;
+        final movieIds = List<String>.from(data['movieIds'] ?? []);
+
+        if (movieIds.contains(movieId)) {
+          final updatedMovieIds = movieIds.where((id) => id != movieId).toList();
+          await _firestore.collection('playlists').doc(playlistId).update({
+            'movieIds': updatedMovieIds,
+            'updatedAt': DateTime.now().toIso8601String(),
+          });
+        }
+      }
+    } catch (e) {
+      throw 'Failed to remove movie from all playlists: $e';
     }
   }
 

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/models/user_match_model.dart';
-import '../../../core/models/movie_model.dart';
+import '../../../core/models/simple_movie_info.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/movies_service.dart';
+import '../../../core/services/omdb_service.dart';
 
 class UserMatchTile extends StatefulWidget {
   final UserMatch userMatch;
@@ -16,7 +17,7 @@ class UserMatchTile extends StatefulWidget {
 
 class _UserMatchTileState extends State<UserMatchTile> {
   bool _isExpanded = false;
-  List<Movie> _commonMovies = [];
+  List<SimpleMovieInfo> _commonMovies = [];
   bool _isLoadingMovies = false;
 
   @override
@@ -30,26 +31,63 @@ class _UserMatchTileState extends State<UserMatchTile> {
   Future<void> _loadCommonMovies() async {
     setState(() => _isLoadingMovies = true);
     
-    print('[UserMatchTile] Loading ${widget.userMatch.commonMovieIds.length} common movies');
-    print('[UserMatchTile] Movie IDs: ${widget.userMatch.commonMovieIds}');
+    print('\n🎬 Loading ${widget.userMatch.commonMovieIds.length} common movies');
 
     try {
       final moviesService = MoviesService();
-      final movies = await moviesService.getMoviesByIds(widget.userMatch.commonMovieIds);
-      
-      print('[UserMatchTile] Successfully loaded ${movies.length} movies');
-      for (var movie in movies) {
-        print('[UserMatchTile] Movie: ${movie.title} - ${movie.posterUrl}');
+      final omdbService = OmdbService();
+      final loadedMovies = <SimpleMovieInfo>[];
+
+      for (var movieId in widget.userMatch.commonMovieIds) {
+        // ÉTAPE 1: Essayer Firestore (movies admin)
+        try {
+          final firestoreMovies = await moviesService.getMoviesByIds([movieId]);
+          
+          if (firestoreMovies.isNotEmpty) {
+            final movie = firestoreMovies.first;
+            loadedMovies.add(SimpleMovieInfo.fromMovie(movie));
+            print('✅ Firestore: ${movie.title}');
+            continue;
+          }
+        } catch (e) {
+          // Pas dans Firestore, continuer
+        }
+
+        // ÉTAPE 2: Essayer OMDB (avec ID IMDB)
+        if (movieId.startsWith('tt')) {
+          try {
+            final omdbMovie = await omdbService.getMovieById(movieId);
+            
+            if (omdbMovie != null) {
+              loadedMovies.add(SimpleMovieInfo.fromRapidApi(omdbMovie));
+              print('✅ OMDB: ${omdbMovie['title']}');
+              continue;
+            }
+          } catch (e) {
+            print('⚠️ OMDB error for $movieId: $e');
+          }
+        }
+
+        // ÉTAPE 3: Placeholder si rien trouvé
+        print('❌ Not found: $movieId');
+        loadedMovies.add(SimpleMovieInfo(
+          id: movieId,
+          title: 'Movie ${movieId.substring(0, 8)}...',
+          imageUrl: null,
+          source: 'placeholder',
+        ));
       }
+
+      print('📊 Loaded: ${loadedMovies.length}/${widget.userMatch.commonMovieIds.length}\n');
 
       if (mounted) {
         setState(() {
-          _commonMovies = movies;
+          _commonMovies = loadedMovies;
           _isLoadingMovies = false;
         });
       }
     } catch (e) {
-      print('[UserMatchTile] ERROR loading movies: $e');
+      print('❌ Error: $e');
       if (mounted) {
         setState(() => _isLoadingMovies = false);
       }
@@ -105,7 +143,6 @@ class _UserMatchTileState extends State<UserMatchTile> {
                               )
                             : _buildDefaultAvatar(),
                       ),
-                      // Match indicator
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -127,7 +164,7 @@ class _UserMatchTileState extends State<UserMatchTile> {
                   ),
                   const SizedBox(width: 12),
                   
-                  // User Info - AVEC EXPANDED POUR ÉVITER LE DÉBORDEMENT
+                  // User Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +221,7 @@ class _UserMatchTileState extends State<UserMatchTile> {
                   
                   const SizedBox(width: 8),
                   
-                  // Match Badge - TAILLE FIXE
+                  // Match Badge
                   Container(
                     width: 70,
                     height: 60,
@@ -266,25 +303,44 @@ class _UserMatchTileState extends State<UserMatchTile> {
                   const SizedBox(height: 12),
                   
                   if (_isLoadingMovies)
-                    const Center(
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Loading movies...',
+                              style: AppTheme.captionStyle,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   else if (_commonMovies.isEmpty)
                     Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'Could not load movie details',
-                          style: AppTheme.captionStyle,
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              PhosphorIconsRegular.filmSlate,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No movies to display',
+                              style: AppTheme.captionStyle,
+                            ),
+                          ],
                         ),
                       ),
                     )
                   else
                     SizedBox(
-                      height: 130,
+                      height: 140,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: _commonMovies.length,
@@ -302,7 +358,9 @@ class _UserMatchTileState extends State<UserMatchTile> {
     );
   }
 
-  Widget _buildMovieCard(Movie movie) {
+  Widget _buildMovieCard(SimpleMovieInfo movie) {
+    final isPlaceholder = movie.source == 'placeholder' || movie.source == 'error';
+    
     return Container(
       width: 90,
       margin: const EdgeInsets.only(right: 12),
@@ -311,20 +369,38 @@ class _UserMatchTileState extends State<UserMatchTile> {
         children: [
           // Movie Poster
           Container(
-            height: 90,
+            height: 100,
             width: 90,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: Colors.grey[200],
+              color: isPlaceholder ? Colors.grey[300] : Colors.grey[200],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: movie.posterUrl != null
+              child: movie.imageUrl != null && !isPlaceholder
                   ? Image.network(
-                      movie.posterUrl!,
+                      movie.imageUrl!,
                       fit: BoxFit.cover,
+                      width: 90,
+                      height: 100,
                       errorBuilder: (context, error, stackTrace) {
                         return _buildMoviePlaceholder();
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
                       },
                     )
                   : _buildMoviePlaceholder(),
@@ -334,10 +410,10 @@ class _UserMatchTileState extends State<UserMatchTile> {
           // Movie Title
           Text(
             movie.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: isPlaceholder ? Colors.grey[600] : Colors.black87,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -382,10 +458,10 @@ class _UserMatchTileState extends State<UserMatchTile> {
 
   Color _getMatchColor() {
     final percentage = widget.userMatch.matchPercentage;
-    if (percentage == 100) return const Color(0xFFEF4444); // ROUGE au lieu de rose
-    if (percentage >= 90) return const Color(0xFFF59E0B); // Orange - Excellent
-    if (percentage >= 80) return const Color(0xFF10B981); // Green - Great
-    return const Color(0xFF6366F1); // Blue - Good
+    if (percentage == 100) return const Color(0xFFEF4444);
+    if (percentage >= 90) return const Color(0xFFF59E0B);
+    if (percentage >= 80) return const Color(0xFF10B981);
+    return const Color(0xFF6366F1);
   }
 
   IconData _getMatchIcon() {
