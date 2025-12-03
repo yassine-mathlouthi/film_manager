@@ -10,16 +10,23 @@ class MatchingService {
   /// Find users with matching preferences (>75% match) and save to Firestore
   Future<List<UserMatch>> findMatches(String userId) async {
     try {
+      print('[MatchingService] Finding matches for user: $userId');
+      
       // Get current user's playlist
       final userPlaylist = await _playlistService.getUserPlaylist(userId);
       
+      print('[MatchingService] User playlist: ${userPlaylist?.movieIds.length ?? 0} movies');
+      
       if (userPlaylist == null || userPlaylist.movieIds.isEmpty) {
+        print('[MatchingService] User has no favorites, clearing matches');
         await _clearUserMatches(userId);
         return [];
       }
 
       // Get all users
       final usersSnapshot = await _firestore.collection('users').get();
+      print('[MatchingService] Found ${usersSnapshot.docs.length} total users');
+      
       final matches = <UserMatch>[];
 
       for (var userDoc in usersSnapshot.docs) {
@@ -37,6 +44,8 @@ class MatchingService {
             .toList();
 
         if (commonMovies.isEmpty) continue;
+        
+        print('[MatchingService] Found ${commonMovies.length} common movies with user ${userDoc.id}');
 
         final user1MatchPercent = (commonMovies.length / userPlaylist.movieIds.length) * 100;
         final user2MatchPercent = (commonMovies.length / otherPlaylist.movieIds.length) * 100;
@@ -60,12 +69,18 @@ class MatchingService {
 
       // Sort by match percentage
       matches.sort((a, b) => b.matchPercentage.compareTo(a.matchPercentage));
+      
+      print('[MatchingService] Found ${matches.length} total matches');
+      for (var match in matches) {
+        print('[MatchingService] Match: ${match.userName} - ${match.matchPercentage.toStringAsFixed(1)}% - ${match.commonMovieIds.length} movies');
+      }
 
       // Save matches to Firestore
       await _saveUserMatches(userId, matches);
 
       return matches;
     } catch (e) {
+      print('[MatchingService] ERROR: $e');
       throw 'Failed to find matches: $e';
     }
   }

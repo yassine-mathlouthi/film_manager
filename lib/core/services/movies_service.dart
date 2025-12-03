@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/movie_model.dart';
 import './cloudinary_service.dart';
@@ -97,21 +96,31 @@ class MoviesService {
   // Get multiple movies by IDs
   Future<List<Movie>> getMoviesByIds(List<String> movieIds) async {
     try {
-      if (movieIds.isEmpty) return [];
+      print('[MoviesService] getMoviesByIds called with ${movieIds.length} IDs');
+      print('[MoviesService] Movie IDs: $movieIds');
+      
+      if (movieIds.isEmpty) {
+        print('[MoviesService] No movie IDs provided');
+        return [];
+      }
       
       final movies = <Movie>[];
       
       // Fetch movies in batches (Firestore has a limit of 10 for 'in' queries)
       for (var i = 0; i < movieIds.length; i += 10) {
         final batch = movieIds.skip(i).take(10).toList();
+        print('[MoviesService] Fetching batch ${i ~/ 10 + 1}: $batch');
+        
         final snapshot = await _firestore
             .collection('movies')
             .where(FieldPath.documentId, whereIn: batch)
             .get();
         
+        print('[MoviesService] Batch returned ${snapshot.docs.length} documents');
+        
         for (var doc in snapshot.docs) {
           final data = doc.data();
-          movies.add(Movie(
+          final movie = Movie(
             id: doc.id,
             title: data['title'] ?? '',
             description: data['description'],
@@ -125,12 +134,16 @@ class MoviesService {
                 : null,
             createdAt: _parseDateTime(data['createdAt']),
             createdBy: data['createdBy'] ?? '',
-          ));
+          );
+          movies.add(movie);
+          print('[MoviesService] Added movie: ${movie.title}');
         }
       }
       
+      print('[MoviesService] Total movies fetched: ${movies.length}');
       return movies;
     } catch (e) {
+      print('[MoviesService] ERROR in getMoviesByIds: $e');
       throw Exception('Failed to fetch movies: $e');
     }
   }

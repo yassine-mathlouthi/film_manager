@@ -17,13 +17,18 @@ class MatchingProvider extends ChangeNotifier {
   Future<void> loadMatches(String userId) async {
     _setLoading(true);
     _clearError();
+    
+    print('[MatchingProvider] Loading matches for user: $userId');
 
     try {
       _matches = await _matchingService.findMatches(userId);
       
+      print('[MatchingProvider] Received ${_matches.length} matches');
+      
       // Sort by match percentage (descending order - highest first)
       _matches.sort((a, b) => b.matchPercentage.compareTo(a.matchPercentage));
     } catch (e) {
+      print('[MatchingProvider] ERROR: $e');
       _setError(e.toString());
     }
 

@@ -29,10 +29,18 @@ class _UserMatchTileState extends State<UserMatchTile> {
 
   Future<void> _loadCommonMovies() async {
     setState(() => _isLoadingMovies = true);
+    
+    print('[UserMatchTile] Loading ${widget.userMatch.commonMovieIds.length} common movies');
+    print('[UserMatchTile] Movie IDs: ${widget.userMatch.commonMovieIds}');
 
     try {
       final moviesService = MoviesService();
       final movies = await moviesService.getMoviesByIds(widget.userMatch.commonMovieIds);
+      
+      print('[UserMatchTile] Successfully loaded ${movies.length} movies');
+      for (var movie in movies) {
+        print('[UserMatchTile] Movie: ${movie.title} - ${movie.posterUrl}');
+      }
 
       if (mounted) {
         setState(() {
@@ -41,6 +49,7 @@ class _UserMatchTileState extends State<UserMatchTile> {
         });
       }
     } catch (e) {
+      print('[UserMatchTile] ERROR loading movies: $e');
       if (mounted) {
         setState(() => _isLoadingMovies = false);
       }
