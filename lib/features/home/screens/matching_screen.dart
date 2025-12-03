@@ -25,36 +25,12 @@ class _MatchingScreenState extends State<MatchingScreen> {
   }
 
   Future<void> _loadMatches() async {
-    print('\n╔═══════════════════════════════════════╗');
-    print('║  MATCHING SCREEN - LOADING MATCHES    ║');
-    print('╚═══════════════════════════════════════╝\n');
-    
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final matchingProvider = Provider.of<MatchingProvider>(context, listen: false);
     final currentUser = authProvider.currentUser;
 
     if (currentUser != null) {
-      print('=== LOADING MATCHES FOR USER: ${currentUser.id} ===');
-      print('User: ${currentUser.fullName}');
-      print('Email: ${currentUser.email}\n');
-      
       await matchingProvider.loadMatches(currentUser.id);
-      
-      print('=== MATCHES FOUND: ${matchingProvider.matches.length} ===');
-      if (matchingProvider.matches.isEmpty) {
-        print('⚠️  No matches found. Possible reasons:');
-        print('   1. No other users have playlists');
-        print('   2. Match percentage < 75%');
-        print('   3. Other users have empty playlists');
-      } else {
-        print('✅ Matches:');
-        for (var match in matchingProvider.matches) {
-          print('   - ${match.userName}: ${match.matchPercentage.toStringAsFixed(1)}%');
-        }
-      }
-      print('\n');
-    } else {
-      print('❌ No current user found!');
     }
   }
 

@@ -18,7 +18,7 @@ class PlaylistProvider with ChangeNotifier {
       final movieIds = await _playlistService.getPlaylistMovieIds(userId);
       _favoriteMovieIds = movieIds.toSet();
     } catch (e) {
-      debugPrint('Error loading favorites: $e');
+      // Handle error silently or log to crash reporting
     } finally {
       _isLoading = false;
       notifyListeners();

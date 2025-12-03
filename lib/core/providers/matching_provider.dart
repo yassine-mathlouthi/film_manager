@@ -23,14 +23,8 @@ class MatchingProvider extends ChangeNotifier {
       
       // Sort by match percentage (descending order - highest first)
       _matches.sort((a, b) => b.matchPercentage.compareTo(a.matchPercentage));
-      
-      print('✅ Matches loaded and sorted: ${_matches.length}');
-      if (_matches.isNotEmpty) {
-        print('🏆 Top match: ${_matches.first.userName} - ${_matches.first.matchPercentage.toStringAsFixed(1)}%');
-      }
     } catch (e) {
       _setError(e.toString());
-      print('❌ Error loading matches: $e');
     }
 
     _setLoading(false);

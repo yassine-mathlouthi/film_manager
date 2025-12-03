@@ -53,7 +53,6 @@ class _UserMatchTileState extends State<UserMatchTile> {
         });
       }
     } catch (e) {
-      print('❌ Error loading common movies: $e');
       if (mounted) {
         setState(() => _isLoadingMovies = false);
       }

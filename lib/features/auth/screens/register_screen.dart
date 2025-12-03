@@ -325,8 +325,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       try {
-        print("RegisterScreen: Starting registration...");
-        
         final success = await authProvider.register(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -336,16 +334,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           imagePath: _selectedImage?.path,
         );
 
-        print("RegisterScreen: Registration result: $success");
-
         if (success && mounted) {
-          // Navigate to home (regular users only)
-          print("RegisterScreen: Navigating to home...");
           context.go('/home');
         } else if (mounted) {
-          // Show error message
           final errorMessage = authProvider.error ?? 'Registration failed';
-          print("RegisterScreen: Registration failed - $errorMessage");
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -356,7 +348,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
         }
       } catch (e) {
-        print("RegisterScreen: Caught exception - $e");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

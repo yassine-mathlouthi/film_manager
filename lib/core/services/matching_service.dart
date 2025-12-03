@@ -7,35 +7,19 @@ class MatchingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final PlaylistService _playlistService = PlaylistService();
 
-  // Find users with matching preferences (>75% match) and save to Firestore
+  /// Find users with matching preferences (>75% match) and save to Firestore
   Future<List<UserMatch>> findMatches(String userId) async {
-    print('\n╔════════════════════════════════════════╗');
-    print('║   STARTING MATCH SEARCH FOR USER      ║');
-    print('╚════════════════════════════════════════╝');
-    print('👤 Current User ID: $userId\n');
-
     try {
       // Get current user's playlist
-      print('📋 Step 1: Fetching current user playlist...');
       final userPlaylist = await _playlistService.getUserPlaylist(userId);
       
       if (userPlaylist == null || userPlaylist.movieIds.isEmpty) {
-        print('❌ No playlist or empty playlist for user $userId');
-        
-        // Clear existing matches
         await _clearUserMatches(userId);
         return [];
       }
 
-      print('✅ User playlist found!');
-      print('   📊 Total movies: ${userPlaylist.movieIds.length}');
-      print('   🎬 Movie IDs: ${userPlaylist.movieIds.join(", ")}\n');
-
       // Get all users
-      print('👥 Step 2: Fetching all users...');
       final usersSnapshot = await _firestore.collection('users').get();
-      print('✅ Found ${usersSnapshot.docs.length} users\n');
-
       final matches = <UserMatch>[];
 
       for (var userDoc in usersSnapshot.docs) {
@@ -71,7 +55,6 @@ class MatchingService {
           );
           
           matches.add(match);
-          print('✅ Match found: $userName - ${matchPercentage.toStringAsFixed(1)}%');
         }
       }
 
@@ -81,21 +64,13 @@ class MatchingService {
       // Save matches to Firestore
       await _saveUserMatches(userId, matches);
 
-      print('\n╔════════════════════════════════════════╗');
-      print('║          MATCHING COMPLETE             ║');
-      print('╚════════════════════════════════════════╝');
-      print('📊 Total matches found: ${matches.length}');
-      print('💾 Matches saved to Firestore\n');
-
       return matches;
-    } catch (e, stackTrace) {
-      print('❌ ERROR in findMatches: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       throw 'Failed to find matches: $e';
     }
   }
 
-  // Save user matches to Firestore
+  /// Save user matches to Firestore
   Future<void> _saveUserMatches(String userId, List<UserMatch> matches) async {
     try {
       final userMatchesRef = _firestore.collection('user_matches').doc(userId);
@@ -106,31 +81,26 @@ class MatchingService {
         'totalMatches': matches.length,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
-      
-      print('✅ Saved ${matches.length} matches to Firestore for user $userId');
     } catch (e) {
-      print('❌ Error saving matches: $e');
       // Don't throw - matching can work without saving
     }
   }
 
-  // Clear user matches
+  /// Clear user matches
   Future<void> _clearUserMatches(String userId) async {
     try {
       await _firestore.collection('user_matches').doc(userId).delete();
-      print('🗑️ Cleared matches for user $userId');
     } catch (e) {
-      print('⚠️ Error clearing matches: $e');
+      // Ignore errors when clearing
     }
   }
 
-  // Get saved matches from Firestore
+  /// Get saved matches from Firestore
   Future<List<UserMatch>> getSavedMatches(String userId) async {
     try {
       final doc = await _firestore.collection('user_matches').doc(userId).get();
       
       if (!doc.exists) {
-        print('📭 No saved matches found for user $userId');
         return [];
       }
 
@@ -141,10 +111,8 @@ class MatchingService {
           .map((matchData) => UserMatch.fromJson(matchData as Map<String, dynamic>))
           .toList();
       
-      print('📬 Loaded ${matches.length} saved matches from Firestore');
       return matches;
     } catch (e) {
-      print('❌ Error loading saved matches: $e');
       return [];
     }
   }

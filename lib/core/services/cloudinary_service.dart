@@ -41,11 +41,8 @@ class CloudinaryService {
   Future<String?> uploadImageSigned(String imagePath, {String? folder}) async {
     try {
       if (_cloudName.isEmpty || _apiKey.isEmpty || _apiSecret.isEmpty) {
-        print('❌ Cloudinary credentials not configured for signed upload');
         return null;
       }
-
-      print('📤 Uploading image to Cloudinary (signed)...');
       
       final uri = Uri.parse(
         'https://api.cloudinary.com/v1_1/$_cloudName/image/upload'
@@ -56,7 +53,6 @@ class CloudinaryService {
       // Add the file
       final file = File(imagePath);
       if (!await file.exists()) {
-        print('❌ Image file does not exist: $imagePath');
         return null;
       }
       
@@ -89,16 +85,11 @@ class CloudinaryService {
       
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(responseData);
-        final secureUrl = jsonResponse['secure_url'] as String;
-        print('✅ Image uploaded successfully: $secureUrl');
-        return secureUrl;
-      } else {
-        print('❌ Cloudinary upload failed: ${response.statusCode}');
-        print('Response: $responseData');
-        return null;
+        return jsonResponse['secure_url'] as String;
       }
+      
+      return null;
     } catch (e) {
-      print('❌ Error uploading to Cloudinary: $e');
       return null;
     }
   }
@@ -112,11 +103,8 @@ class CloudinaryService {
   Future<String?> uploadImage(String imagePath, {String? folder}) async {
     try {
       if (_cloudName.isEmpty || _uploadPreset.isEmpty) {
-        print('❌ Cloudinary credentials not configured');
         return null;
       }
-
-      print('📤 Uploading image to Cloudinary...');
       
       final uri = Uri.parse(
         'https://api.cloudinary.com/v1_1/$_cloudName/image/upload'
@@ -127,7 +115,6 @@ class CloudinaryService {
       // Add the file
       final file = File(imagePath);
       if (!await file.exists()) {
-        print('❌ Image file does not exist: $imagePath');
         return null;
       }
       
@@ -146,16 +133,11 @@ class CloudinaryService {
       
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(responseData);
-        final secureUrl = jsonResponse['secure_url'] as String;
-        print('✅ Image uploaded successfully: $secureUrl');
-        return secureUrl;
-      } else {
-        print('❌ Cloudinary upload failed: ${response.statusCode}');
-        print('Response: $responseData');
-        return null;
+        return jsonResponse['secure_url'] as String;
       }
+      
+      return null;
     } catch (e) {
-      print('❌ Error uploading to Cloudinary: $e');
       return null;
     }
   }
@@ -167,7 +149,6 @@ class CloudinaryService {
   /// 
   /// Returns the secure URL of the uploaded image
   Future<String?> uploadProfileImage(String imagePath, String userId) async {
-    // Use signed upload (more secure and doesn't require preset)
     return uploadImageSigned(imagePath, folder: 'film_manager/profile_images');
   }
 
@@ -177,7 +158,6 @@ class CloudinaryService {
   /// 
   /// Returns the secure URL of the uploaded image
   Future<String?> uploadMoviePoster(String imagePath) async {
-    // Use signed upload (more secure and doesn't require preset)
     return uploadImageSigned(imagePath, folder: 'film_manager/movie_posters');
   }
 }

@@ -1,4 +1,3 @@
-// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -9,7 +8,6 @@ class MovieService {
 
   Future<List<dynamic>> getMovies() async {
     final url = Uri.parse("https://$apiHost/api/imdb/most-popular-movies");
-    print(url);
 
     final response = await http.get(
       url,
@@ -21,8 +19,6 @@ class MovieService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print(data);
-      // API returns a list directly
       if (data is List) {
         return data;
       }

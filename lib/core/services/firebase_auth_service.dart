@@ -17,27 +17,16 @@ class FirebaseAuthService {
     required String password,
   }) async {
     try {
-      print("=== Starting sign in process ===");
-      print("Email: $email");
-      
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       
-      print("✅ Sign in successful!");
-      print("UID: ${credential.user?.uid}");
-      
       if (credential.user != null) {
-        // Fetch user data from Firestore
-        print("Fetching user data from Firestore...");
         final userData = await getUserData(credential.user!.uid);
-        print("✅ User data fetched successfully");
         
         // Check if user is active
         if (userData != null && userData['isActive'] == false) {
-          print("❌ User account is inactive");
-          // Sign out the user
           await _firebaseAuth.signOut();
           throw 'Your account has been deactivated by an administrator. Please contact support for assistance.';
         }
@@ -46,12 +35,8 @@ class FirebaseAuthService {
       }
       return null;
     } on firebase_auth.FirebaseAuthException catch (e) {
-      print("❌ Firebase Auth Error: ${e.code}");
-      print("Message: ${e.message}");
       throw _handleAuthException(e);
     } catch (e) {
-      print("❌ Unexpected error during sign in: $e");
-      print("Error type: ${e.runtimeType}");
       throw 'An unexpected error occurred: $e';
     }
   }
@@ -67,17 +52,10 @@ class FirebaseAuthService {
     String role = 'user',
   }) async {
     try {
-      print("=== Starting registration process ===");
-      print("Email: $email");
-      print("Firebase Auth instance: ${_firebaseAuth.app.name}");
-      
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      print("✅ User registered successfully!");
-      print("UID: ${credential.user?.uid}");
 
       if (credential.user != null) {
         String? profileImageUrl;
@@ -85,18 +63,11 @@ class FirebaseAuthService {
         // Upload profile image to Cloudinary if provided
         if (imagePath != null) {
           try {
-            print("Uploading profile image to Cloudinary...");
             profileImageUrl = await _cloudinaryService.uploadProfileImage(
               imagePath, 
               credential.user!.uid,
             );
-            if (profileImageUrl != null) {
-              print("✅ Profile image uploaded to Cloudinary: $profileImageUrl");
-            } else {
-              print("⚠️ Cloudinary upload returned null");
-            }
           } catch (e) {
-            print("⚠️ Failed to upload profile image: $e");
             // Continue registration even if image upload fails
           }
         }
@@ -114,29 +85,19 @@ class FirebaseAuthService {
           'lastLoginAt': DateTime.now().toIso8601String(),
         };
 
-        print("Saving user data to Firestore...");
-
         await _firestore
             .collection('users')
             .doc(credential.user!.uid)
             .set(userData);
 
-        print("✅ User data saved to Firestore");
-
-        // Update display name
         await credential.user!.updateDisplayName('$firstName $lastName');
         
-        print("✅ Registration complete!");
         return userData;
       }
       return null;
     } on firebase_auth.FirebaseAuthException catch (e) {
-      print("❌ Firebase Auth Error: ${e.code}");
-      print("Message: ${e.message}");
       throw _handleAuthException(e);
     } catch (e) {
-      print("❌ Unexpected error during registration: $e");
-      print("Error type: ${e.runtimeType}");
       throw 'An unexpected error occurred: $e';
     }
   }
@@ -151,14 +112,11 @@ class FirebaseAuthService {
   }
 
   // Get user data from Firestore
-  // Get user data from Firestore
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
-      print("Fetching user document for UID: $uid");
       final doc = await _firestore.collection('users').doc(uid).get();
       
       if (doc.exists) {
-        print("✅ User document found");
         final data = doc.data();
         if (data != null) {
           // Update last login
@@ -172,12 +130,9 @@ class FirebaseAuthService {
             'lastLoginAt': DateTime.now().toIso8601String(),
           };
         }
-      } else {
-        print("❌ User document not found in Firestore");
       }
       return null;
     } catch (e) {
-      print("❌ Error fetching user data: $e");
       throw 'Failed to fetch user data: $e';
     }
   }
@@ -191,15 +146,11 @@ class FirebaseAuthService {
       // Check if there's an image to upload
       if (updates.containsKey('imagePath') && updates['imagePath'] != null) {
         final imagePath = updates['imagePath'] as String;
-        print("Uploading new profile image to Cloudinary...");
         
         final imageUrl = await _cloudinaryService.uploadProfileImage(imagePath, uid);
         
         if (imageUrl != null) {
           updates['profileImageUrl'] = imageUrl;
-          print("✅ Profile image updated: $imageUrl");
-        } else {
-          print("⚠️ Failed to upload profile image");
         }
         
         // Remove imagePath from updates as it's not stored in Firestore
@@ -208,7 +159,6 @@ class FirebaseAuthService {
       
       await _firestore.collection('users').doc(uid).update(updates);
     } catch (e) {
-      print("❌ Error updating profile: $e");
       throw 'Failed to update profile. Please try again.';
     }
   }
