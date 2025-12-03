@@ -45,49 +45,59 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       const MoviesScreen(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_currentIndex == 0 ? 'Film Manager' : 'Movies'),
-        actions: [
-          IconButton(
-      icon: Icon(PhosphorIcons.users()), // Icône pour le matching
-      tooltip: 'Find Matches',
-      onPressed: () => context.push('/matching'),
-    ),
-          IconButton(
-            icon: Icon(PhosphorIcons.user()),
-            onPressed: () => context.push('/profile'),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(_currentIndex == 0 ? 'Film Manager' : 'Movies'),
+            actions: [
+              if (authProvider.isAdmin)
+                IconButton(
+                  icon: Icon(PhosphorIcons.shield(PhosphorIconsStyle.fill)),
+                  tooltip: 'Admin Dashboard',
+                  onPressed: () => context.push('/admin'),
+                ),
+              IconButton(
+                icon: Icon(PhosphorIcons.users()),
+                tooltip: 'Find Matches',
+                onPressed: () => context.push('/matching'),
+              ),
+              IconButton(
+                icon: Icon(PhosphorIcons.user()),
+                onPressed: () => context.push('/profile'),
+              ),
+              IconButton(
+                icon: Icon(PhosphorIcons.signOut()),
+                onPressed: () => _showLogoutDialog(context),
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(PhosphorIcons.signOut()),
-            onPressed: () => _showLogoutDialog(context),
+          body: IndexedStack(
+            index: _currentIndex,
+            children: screens,
           ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: Icon(PhosphorIcons.house()),
-            selectedIcon: Icon(PhosphorIcons.house(PhosphorIconsStyle.fill)),
-            label: 'Home',
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            destinations: [
+              NavigationDestination(
+                icon: Icon(PhosphorIcons.house()),
+                selectedIcon: Icon(PhosphorIcons.house(PhosphorIconsStyle.fill)),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(PhosphorIcons.filmStrip()),
+                selectedIcon: Icon(PhosphorIcons.filmStrip(PhosphorIconsStyle.fill)),
+                label: 'Movies',
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(PhosphorIcons.filmStrip()),
-            selectedIcon: Icon(PhosphorIcons.filmStrip(PhosphorIconsStyle.fill)),
-            label: 'Movies',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

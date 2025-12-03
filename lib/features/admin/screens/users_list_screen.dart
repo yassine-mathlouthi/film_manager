@@ -94,12 +94,17 @@ class _UsersListScreenState extends State<UsersListScreen> {
             );
           }
 
-          // Update filtered users when users list changes
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_filteredUsers.isEmpty && usersProvider.users.isNotEmpty) {
+          // Initialize filtered users if needed
+          if (_filteredUsers.isEmpty && usersProvider.users.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
               _filterUsers();
-            }
-          });
+            });
+          }
+
+          // Update filtered users when filter changes
+          final displayUsers = _filteredUsers.isEmpty && _searchController.text.isEmpty && _selectedRole == 'all'
+              ? usersProvider.users
+              : _filteredUsers;
 
           return Column(
             children: [
@@ -124,21 +129,21 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 ),
                 color: AppTheme.textLight.withOpacity(0.1),
                 child: Text(
-                  'Total: ${_filteredUsers.length} users',
+                  'Total: ${displayUsers.length} users',
                   style: AppTheme.captionStyle,
                 ),
               ),
 
               // Users list
               Expanded(
-                child: _filteredUsers.isEmpty
+                child: displayUsers.isEmpty
                     ? const EmptyUsersView()
                     : RefreshIndicator(
                         onRefresh: () => usersProvider.fetchUsers(),
                         child: ListView.builder(
-                          itemCount: _filteredUsers.length,
+                          itemCount: displayUsers.length,
                           itemBuilder: (context, index) {
-                            final user = _filteredUsers[index];
+                            final user = displayUsers[index];
                             return UserCard(
                               user: user,
                               onEdit: () => _showEditUserDialog(user),
@@ -276,27 +281,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
           SnackBar(
             content: Text(
               usersProvider.error ?? 'Failed to $action user',
-            ),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-    }
-    if (confirm == true && mounted) {
-      final success = await usersProvider.deleteUser(user.id);
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${user.fullName} has been deleted'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        _filterUsers();
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              usersProvider.error ?? 'Failed to delete user',
             ),
             backgroundColor: AppTheme.errorColor,
           ),

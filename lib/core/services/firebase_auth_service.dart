@@ -33,6 +33,15 @@ class FirebaseAuthService {
         print("Fetching user data from Firestore...");
         final userData = await getUserData(credential.user!.uid);
         print("✅ User data fetched successfully");
+        
+        // Check if user is active
+        if (userData != null && userData['isActive'] == false) {
+          print("❌ User account is inactive");
+          // Sign out the user
+          await _firebaseAuth.signOut();
+          throw 'Your account has been deactivated by an administrator. Please contact support for assistance.';
+        }
+        
         return userData;
       }
       return null;
