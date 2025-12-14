@@ -3,6 +3,12 @@
 A beautiful and scalable Flutter application for managing film collections with role-based authentication and admin features.
 
 ## Features
+<img width="375" height="797" alt="Capture d&#39;écran 2025-11-21 224117" src="https://github.com/user-attachments/assets/bfd1eb7c-36ff-42c3-a2c9-1ee45bf0fd99" />
+<img width="365" height="792" alt="Capture d&#39;écran 2025-11-21 224039" src="https://github.com/user-attachments/assets/8ea4e7c4-2f28-4c5a-8d22-d334b066b9a0" />
+<img width="391" height="813" alt="Capture d&#39;écran 2025-11-21 223642" src="https://github.com/user-attachments/assets/6db0fd27-344c-4d59-b78c-8072abb3fbc8" />
+<img width="386" height="802" alt="Capture d&#39;écran 2025-11-21 223532" src="https://github.com/user-attachments/assets/c98eb344-84b3-4bda-b18a-86da10c16f61" />
+<img width="369" height="809" alt="Capture d&#39;écran 2025-11-21 223507" src="https://github.com/user-attachments/assets/8697d12d-52b0-4053-a4b7-9d8a71457bcf" />
+<img width="391" height="808" alt="Capture d&#39;écran 2025-11-21 223438" src="https://github.com/user-attachments/assets/749b8f5c-f806-4e4a-8c30-28320c998b7d" />
 
 ### 🔐 Authentication System
 
